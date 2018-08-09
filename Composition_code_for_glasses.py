@@ -186,7 +186,7 @@ for im_name in fg_files:
 
         ## save
         out_ffname_comp = out_path4 + str(fcount) + '_A.png'
-        mask.save(out_ffname_comp)
+        out.save(out_ffname_comp)
         out_ffname_m = out_path3 + str(fcount) + '_A.png'
         mask.save(out_ffname_m)
 
