@@ -32,12 +32,15 @@ bg_path = r'c:/Data/glass/source_data/faces_checked_v2/'
 #Path to folder where you want the composited images to go
 #out_path = 'C:/tmp/composite/'
 #out_path2 = 'C:/tmp/faces/'
-out_path = 'C:/Data/glass/generated_data/composite_Poisson/'
-out_path2 = 'C:/Data/glass/generated_data/faces_Poisson/'
+out_path = 'C:/Data/glass/blended_data/glass_removed_w_Poisson/'
+out_path2 = 'C:/Data/glass/blended_data/face/'
+out_path3 = 'C:/Data/glass/blended_data/mask/'
+out_path4 = 'C:/Data/glass/blended_data/glass/'
 
 #parameters
-NUM_BGS = 40         ## TRAINING: for each FG image (eyeglass), use how many BG (face) images. This number cannot be larger than existing BG images. Must CHECK!
+#NUM_BGS = 40         ## TRAINING: for each FG image (eyeglass), use how many BG (face) images. This number cannot be larger than existing BG images. Must CHECK!
 #NUM_BGS = 6           ## TESTING UNSEEN DATA
+NUM_BGS = 1
 
 ## images already with glasses (and other artifacts), these are bad!!!: 52, 132, 138, 164, 167, 168, 175, 179, 193, 210, 252, 259, 286, 292, 295
 
@@ -52,7 +55,8 @@ import numpy as np
 import Poisson_v2
 import copy ## for deep copy
 
-def composite4(fg, bg, a, shift_hori, shift_vert):
+# alpha and fg are aligned, but bg requires a shift
+def composite4(fg, bg, a, mask, shift_hori, shift_vert):
     
     bbox = fg.size
     w = bbox[0]
@@ -61,6 +65,7 @@ def composite4(fg, bg, a, shift_hori, shift_vert):
     fg_list = fg.load()
     bg_list = bg.load()
     a_list = a.load()
+    m_list = mask.load()
 
     for y in range(h):
         for x in range (w):
@@ -71,11 +76,13 @@ def composite4(fg, bg, a, shift_hori, shift_vert):
                 g = int(fg_list[x,y][1])
                 b = int(fg_list[x,y][2])
                 bg_list[x+shift_hori, y+shift_vert] = (r, g, b, 255)
+                m_list[x + shift_hori, y + shift_vert] = (255, 255, 255, 255)
             elif alpha > 0:
                 r = int(alpha * fg_list[x,y][0] + (1-alpha) * bg_list[x + shift_hori, y + shift_vert][0])
                 g = int(alpha * fg_list[x,y][1] + (1-alpha) * bg_list[x + shift_hori, y + shift_vert][1])
                 b = int(alpha * fg_list[x,y][2] + (1-alpha) * bg_list[x + shift_hori, y + shift_vert][2])
                 bg_list[x + shift_hori, y + shift_vert] = (r, g, b, 255)
+                m_list[x + shift_hori, y + shift_vert] = (255, 255, 255, 255)
 
     return bg
 
@@ -130,12 +137,9 @@ for im_name in fg_files:
         except:
             continue
 
-        #bg = bg.resize((312,312), Image.BICUBIC)
+        ## save original face image
+        bg.save(out_path2 + str(fcount) + '_B.png', "PNG")
 
-
-        #bg = Image.open(bg_path1 + bg_name)
-        #if bg.mode != 'RGB':
-        #    bg = bg.convert('RGB')
 
         ## update w and h
         bbox = im.size
@@ -145,6 +149,8 @@ for im_name in fg_files:
         bw = bg_bbox[0]
         bh = bg_bbox[1]
 
+
+        ### alpha matte
         factor = 2.0 * random.randint(95,101) / 100
         a = a.resize((math.ceil(w*factor), math.ceil(h*factor)), Image.BICUBIC)
         a = np.array(a)
@@ -152,15 +158,28 @@ for im_name in fg_files:
         a[:, 0] = 0
         a[-1, :] = 0
         a[0, :] = 0
+        a_np = copy.deepcopy(a)
         a = Image.fromarray(a)
-        im_resized = im.resize((math.ceil(w*factor), math.ceil(h*factor)), Image.BICUBIC)
+        
 
+        ## mask
+        mask = copy.deepcopy(np.array(bg).astype(np.uint8)) ## same size as original face image
+        mask = mask * 0
+        mask = Image.fromarray(mask)
+
+        ## composite
+        im_resized = im.resize((math.ceil(w*factor), math.ceil(h*factor)), Image.BICUBIC)
         shift_hori = math.ceil(512 - w*factor/2)
         shift_vert = math.ceil(519 - h*factor/2)
-        bg.save(out_path2 + str(fcount) + '_B.png', "PNG")
+        out = composite4(im_resized, bg, a, mask, shift_hori, shift_vert)
 
-        out = composite4(im_resized, bg, a, shift_hori, shift_vert)
+        ## save
+        out_ffname_comp = out_path4 + str(fcount) + '_A.png'
+        mask.save(out_ffname_comp)
+        out_ffname_m = out_path3 + str(fcount) + '_A.png'
+        mask.save(out_ffname_m)
 
+        ## Poisson blending
         img_Poisson_src = 0 * np.array(a)
         #img_mask, img_src, offset_adj = Poisson_v2.create_mask(np.array(a).astype(np.float64), np.array(out), img_Poisson_src, offset=offset)
         offset_adj = (shift_vert, shift_hori)
@@ -172,11 +191,13 @@ for im_name in fg_files:
         poisson_mask[:, 0] = 0
         poisson_mask[-1, :] = 0
         poisson_mask[0, :] = 0
-
         img_pro = Poisson_v2.poisson_blend(poisson_mask, img_Poisson_src, np.array(out), method='normal', offset_adj=offset_adj)
         img_pro = Image.fromarray(img_pro)
 
     #out.save(out_path + im_name[:len(im_name)-4] + '_' + bg_name[:len(bg_name)-4] + '_R.png', "PNG")
         img_pro.save(out_ffname, "PNG")
+        
+        ####################
+        ####################
         bcount += 1
         fcount += 1
