@@ -14,28 +14,28 @@
 
 
 ##############################################################
+
+root_path = r'C:/Data/glass/'
+src_path = root_path + r'source_data/'
+blended_path = root_path + r'blended_data/'
 #path to GLASSES
-fg_path = r'C:/Data/glass/source_data/foreground/'
+fg_path = src_path + r'foreground/'
 #fg_path = r'C:/tmp/foreground/unseen_test/'
 
 #path to provided alpha mattes
-#a_path = r'C:/tmp/alpha/'
 #a_path = r'C:/Data/glass/alpha/unseen_test/'
-a_path = r'C:/Data/glass/source_data/alpha/'
+a_path = src_path + r'alpha/'
 
 #Path to FACES
 #bg_path = r'F:/celebA/celebA-HQ/'
 #bg_path = r'F:/celebA/testing/'
-#bg_path = r'c:/tmp/faces_checked/'
-bg_path = r'c:/Data/glass/source_data/faces_checked_v2/'
+bg_path = src_path + r'faces_checked_v2/'
 
 #Path to folder where you want the composited images to go
-#out_path = 'C:/tmp/composite/'
-#out_path2 = 'C:/tmp/faces/'
-out_path = 'C:/Data/glass/blended_data/glass_removed_w_Poisson/'
-out_path2 = 'C:/Data/glass/blended_data/face/'
-out_path3 = 'C:/Data/glass/blended_data/mask/'
-out_path4 = 'C:/Data/glass/blended_data/glass/'
+out_path = blended_path + r'glass_removed_w_Poisson/'
+out_path2 = blended_path + r'face/'
+out_path3 = blended_path + r'mask/'
+out_path4 = blended_path + r'glass/'
 
 #parameters
 #NUM_BGS = 40         ## TRAINING: for each FG image (eyeglass), use how many BG (face) images. This number cannot be larger than existing BG images. Must CHECK!
@@ -87,14 +87,25 @@ def composite4(fg, bg, a, mask, shift_hori, shift_vert):
     return bg
 
 
+
+## create folders
+os.makedirs(root_path, exist_ok=True)
+os.makedirs(src_path, exist_ok=True)
+os.makedirs(blended_path, exist_ok=True)
+os.makedirs(fg_path, exist_ok=True)
+os.makedirs(a_path, exist_ok=True)
+os.makedirs(bg_path, exist_ok=True)
+os.makedirs(out_path, exist_ok=True)
+os.makedirs(out_path2, exist_ok=True)
+os.makedirs(out_path3, exist_ok=True)
+os.makedirs(out_path4, exist_ok=True)
+
+##
 fg_files = os.listdir(fg_path)
 a_files = os.listdir(a_path)
 bg_files = os.listdir(bg_path)
 bg_iter = iter(bg_files)
 fcount = 0
-
-#from skimage import data, io
-#img_Poisson_src = io.imread(r'C:/Data/glass/Poisson_template/white.png').astype(np.float64)
 
 for im_name in fg_files:
 
