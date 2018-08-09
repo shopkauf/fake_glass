@@ -16,3 +16,5 @@ Crop_near_eyes.py
     input: large images (1024x1024)
     output: cropped images around the eye region
     
+Resize.py
+    output: resize images (320x160)
