@@ -5,8 +5,8 @@ glassesusa_split_alpha_mask.py
     output: alpha mask and RGB
     
 Celeba_generate_faces_png.py
-    input: 30K high resolution celebA-HQ images
-    output: resize a subset to 1024x1024
+    input: 30K high resolution celebA-HQ images in .npy format
+    output: convert npy to png, resize to 1024x1024
 
 Composition_code_for_glasses.py
     input: face images, glass images, alpha matte
