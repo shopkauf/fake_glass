@@ -14,8 +14,9 @@
 
 
 ##############################################################
+import os 
 
-root_path = r'C:/Data/glass/'
+root_path = os.path.expanduser('~/data/glass/')
 src_path = root_path + r'source_data/'
 blended_path = root_path + r'blended_data/'
 #path to GLASSES
